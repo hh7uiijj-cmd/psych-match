@@ -350,6 +350,7 @@ h2{font-weight:700}
           <dt>เกินนั้น</dt><dd>นักสืบมือใหม่</dd>
         </dl>
         <button class="btn" id="start" type="button">เริ่มสืบคดี</button>
+        <button class="btn ghost" id="invite" type="button">ชวนเพื่อนมาเล่นใน LINE</button>
         <p class="credit">นักจิตวิทยาและทฤษฎีทั้งหมดอ้างอิงจากเอกสารเรียน 3 ชุดที่ให้มา</p>
       </div>
     </section>
@@ -471,6 +472,7 @@ var CONFIG = {
   DATA_URL: "",       // (ไม่บังคับ) ลิงก์ไฟล์ pairs.json บนโฮสต์เดียวกัน ถ้าใส่ ผู้เล่นทุกคนจะใช้ข้อมูลจากไฟล์นี้
   SHOW_EDITOR: false  // false = ซ่อนปุ่มแก้ไขข้อมูลไพ่ ก่อนเปิดให้ผู้เล่นจริง
 };
+// ภาพประกอบ SVG ต้นฉบับ (viewBox 100x60) วาดเองสำหรับแต่ละทฤษฎี
 // ภาพประกอบ SVG ต้นฉบับ (viewBox 100x60) วาดเองสำหรับแต่ละทฤษฎี
 // ภาพประกอบ SVG ต้นฉบับ (viewBox 100x60) วาดเองสำหรับแต่ละทฤษฎี
 // ภาพประกอบ SVG ต้นฉบับ (viewBox 100x60) วาดเองสำหรับแต่ละทฤษฎี
@@ -648,7 +650,7 @@ function buildFlex(seed, res, url) {
       styles: { header: { backgroundColor: C.colorHead }, body: { backgroundColor: C.colorBody }, footer: { backgroundColor: C.colorBody } },
       header: { type: 'box', layout: 'vertical', contents: [
         { type: 'text', text: C.title, weight: 'bold', size: 'xl', color: head },
-        { type: 'text', text: C.sub + ' · คดี #' + seed, size: 'xs', color: head }
+        { type: 'text', text: C.sub + (seed ? ' · คดี #' + seed : ''), size: 'xs', color: head }
       ] },
       body: { type: 'box', layout: 'vertical', spacing: 'sm', contents: body },
       footer: { type: 'box', layout: 'vertical', contents: [
@@ -1128,13 +1130,26 @@ function buildFlex(seed, res, url) {
     $('sheet').hidden = false;
     $('close-sheet').focus();
   }
-  function closeSheet() { $('sheet').hidden = true; $('share').focus(); }
+  function closeSheet() { $('sheet').hidden = true; }
   function copyFrom(el, label) {
     var done = function () { toast('คัดลอก' + label + 'แล้ว'); };
     var fallback = function () { el.select(); try { document.execCommand('copy'); done(); } catch (e) { toast('กดค้างที่ช่องแล้วเลือกคัดลอกได้เลย'); } };
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(el.value).then(done, fallback);
     } else fallback();
+  }
+  function sendMsg(msg, url) {
+    if (liffReady && window.liff && liff.isApiAvailable && liff.isApiAvailable('shareTargetPicker')) {
+      liff.shareTargetPicker([msg], { isMultiple: true }).then(function (res) {
+        if (res && res.status === 'success') toast('ส่งการ์ดแล้ว');
+      }).catch(function () { toast('ส่งการ์ดไม่สำเร็จ ลองอีกครั้ง'); });
+      return;
+    }
+    openSheet(msg, url, 'คัดลอกลิงก์แล้ววางส่งให้เพื่อนใน LINE ได้เลย เพื่อนจะได้ไพ่สุ่มชุดของตัวเอง');
+  }
+  function invite() {
+    var url = shareUrl(null, null);
+    sendMsg(buildFlex(null, null, url), url);
   }
   function share() {
     var url = shareUrl(state.seed, state.result.time);
@@ -1401,6 +1416,7 @@ function buildFlex(seed, res, url) {
   $('start').onclick = startGame;
   $('again').onclick = function () { state.pendingSeed = null; startGame(); };
   $('share').onclick = share;
+  $('invite').onclick = invite;
   $('close-sheet').onclick = closeSheet;
   $('copy-url').onclick = function () { copyFrom($('share-url'), 'ลิงก์'); };
   $('sheet').addEventListener('click', function (e) { if (e.target === $('sheet')) closeSheet(); });
