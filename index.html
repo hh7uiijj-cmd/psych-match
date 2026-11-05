@@ -492,6 +492,7 @@ var CONFIG = {
 // ภาพประกอบ SVG ต้นฉบับ (viewBox 100x60) วาดเองสำหรับแต่ละทฤษฎี
 // ภาพประกอบ SVG ต้นฉบับ (viewBox 100x60) วาดเองสำหรับแต่ละทฤษฎี
 // ภาพประกอบ SVG ต้นฉบับ (viewBox 100x60) วาดเองสำหรับแต่ละทฤษฎี
+// ภาพประกอบ SVG ต้นฉบับ (viewBox 100x60) วาดเองสำหรับแต่ละทฤษฎี
 var ART = {
   generic: '<svg viewBox="0 0 100 60"><path class="ft" d="M10 14 H38 L44 20 H90 V52 H10Z"/><path class="fw" d="M18 26 H82 V50 H18Z"/><circle class="fw" cx="54" cy="36" r="9"/><path class="o" d="M61 43 L72 54"/><circle class="fm" cx="26" cy="34" r="3"/></svg>',
   freud: '<svg viewBox="0 0 100 60"><path class="ft" d="M20 30 L80 30 L86 44 L66 56 L36 57 L16 44Z"/><path class="fw" d="M38 30 L50 6 L62 30Z"/><path class="o" d="M2 30 q6 -4 12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0"/><circle class="fm" cx="50" cy="42" r="4.5"/></svg>',
@@ -1140,7 +1141,15 @@ function buildFlex(seed, res, url) {
       navigator.clipboard.writeText(el.value).then(done, fallback);
     } else fallback();
   }
-  function sendMsg(msg, url) {
+  function sendMsg(msg, url, waited) {
+    if (!waited && liffId() && !liffReady && !liffWhy) {
+      toast('กำลังเชื่อมต่อ LINE...');
+      var n = 0, iv = setInterval(function () {
+        n++;
+        if (liffReady || liffWhy || n >= 20) { clearInterval(iv); sendMsg(msg, url, true); }
+      }, 300);
+      return;
+    }
     if (liffReady && window.liff && liff.isApiAvailable && liff.isApiAvailable('shareTargetPicker')) {
       liff.shareTargetPicker([msg], { isMultiple: true }).then(function (res) {
         if (res && res.status === 'success') toast('ส่งการ์ดแล้ว');
@@ -1150,7 +1159,7 @@ function buildFlex(seed, res, url) {
     var why = liffWhy;
     if (!why && liffReady) why = (liff.isInClient && !liff.isInClient()) ? 'เปิดนอกแอป LINE (ต้องเปิดจากลิงก์ liff.line.me ในแอป LINE)' : 'เครื่องนี้ไม่รองรับการส่งการ์ด (shareTargetPicker)';
     if (!why && !liffId()) why = 'ยังไม่ได้ใส่ LIFF ID';
-    if (!why) why = 'LIFF ยังโหลดไม่เสร็จ รอสักครู่แล้วลองอีกครั้ง';
+    if (!why) why = 'LIFF ไม่ตอบกลับภายใน 6 วินาที (ตรวจว่าเปิดจากลิงก์ liff.line.me ในแอป LINE และ Endpoint URL ตรงกับเว็บ)';
     openSheet(msg, url, 'ส่งการ์ดอัตโนมัติไม่ได้: ' + why + ' · คัดลอกลิงก์แล้ววางส่งให้เพื่อนใน LINE ได้เลย');
   }
   function invite() {
