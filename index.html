@@ -466,11 +466,13 @@ h2{font-weight:700}
    แล้วนำไฟล์นี้ขึ้นโฮสต์ที่ลงทะเบียนเป็น Endpoint URL ของ LIFF
    เมื่อใส่แล้ว ปุ่มแชร์จะเรียก liff.shareTargetPicker ส่งการ์ดในนามผู้เล่น
    ถ้าเว้นว่าง (เช่นตอนพรีวิว) ปุ่มแชร์จะเปิดหน้าดูตัวอย่างการ์ดและ JSON แทน */
-   var CONFIG = { LIFF_ID: "2012402403-AfPHXGeh", DATA_URL: "", SHOW_EDITOR: false };
+var CONFIG = {
   LIFF_ID: "",        // LIFF ID จาก LINE Developers Console
   DATA_URL: "",       // (ไม่บังคับ) ลิงก์ไฟล์ pairs.json บนโฮสต์เดียวกัน ถ้าใส่ ผู้เล่นทุกคนจะใช้ข้อมูลจากไฟล์นี้
   SHOW_EDITOR: true   // false = ซ่อนปุ่มแก้ไขข้อมูลไพ่ ก่อนเปิดให้ผู้เล่นจริง
 };
+// ภาพประกอบ SVG ต้นฉบับ (viewBox 100x60) วาดเองสำหรับแต่ละทฤษฎี
+// ภาพประกอบ SVG ต้นฉบับ (viewBox 100x60) วาดเองสำหรับแต่ละทฤษฎี
 // ภาพประกอบ SVG ต้นฉบับ (viewBox 100x60) วาดเองสำหรับแต่ละทฤษฎี
 // ภาพประกอบ SVG ต้นฉบับ (viewBox 100x60) วาดเองสำหรับแต่ละทฤษฎี
 // ภาพประกอบ SVG ต้นฉบับ (viewBox 100x60) วาดเองสำหรับแต่ละทฤษฎี
@@ -606,9 +608,9 @@ function titleFor(sec) { return sec <= 60 ? TITLES[0] : sec <= 100 ? TITLES[1] :
 var CARD_DEFAULT = {
   title: 'Psych-Match', sub: 'จับคู่แฟ้มลับนักจิตวิทยา',
   openText: 'จับคู่นักจิตวิทยากับทฤษฎี 8 คู่ ให้เร็วที่สุด', openHint: 'ไพ่ 16 ใบ เปิดได้ทีละ 2 ใบ จำตำแหน่งให้แม่น',
-  winLine: 'ไขคดีเดียวกันนี้ให้เร็วกว่าฉันได้ไหม',
-  altOpen: 'Psych-Match #{seed} มาแข่งจับคู่นักจิตวิทยากัน', altWin: 'ฉันจับคู่นักจิตวิทยาครบ 8 คู่ใน {time} ลองดูไหม',
-  btnOpen: 'รับคดีนี้', btnWin: 'ลองท้าดู',
+  winLine: 'มาลองจับคู่นักจิตวิทยาด้วยกันไหม',
+  altOpen: 'Psych-Match มาเล่นจับคู่นักจิตวิทยากัน', altWin: 'ฉันจับคู่นักจิตวิทยาครบ 8 คู่ใน {time} มาลองเล่นดูไหม',
+  btnOpen: 'รับคดีนี้', btnWin: 'มาเล่นด้วยกัน',
   tags: '#แฟนพันธุ์แท้จิตวิทยาครั้งที่20 #IOSDU #missionmind #จิตวิทยาอุตสาหกรรมและองค์การ #สวนดุสิต',
   colorHead: '#6b1015', colorBody: '#ecdcb6', colorBtn: '#6b1015'
 };
@@ -714,13 +716,15 @@ function buildFlex(seed, res, url) {
     } catch (e) {}
     var m = /^#case-([a-z0-9]{6})(?:-t(\d{1,4}))?$/.exec(location.hash);
     if (m) { seed = m[1]; t = m[2] != null ? +m[2] : null; }
-    return seed ? { seed: seed, time: t } : null;
+    var m2 = /^#t-(\d{1,4})$/.exec(location.hash);
+    if (m2) t = +m2[1];
+    return (seed || t != null) ? { seed: seed, time: t } : null;
   }
   function shareUrl(seed, time) {
     if (liffId()) {
-      return 'https://liff.line.me/' + liffId() + '?case=' + seed + (time != null ? '&t=' + time : '');
+      return 'https://liff.line.me/' + liffId();
     }
-    return location.href.split('#')[0] + '#case-' + seed + (time != null ? '-t' + time : '');
+    return location.href.split('#')[0];
   }
 
   /* ---------- วาดไพ่ ---------- */
@@ -956,11 +960,7 @@ function buildFlex(seed, res, url) {
     $('res-stats').innerHTML = '<span>เปิดผิด <b>' + R.misses + '</b> ครั้ง</span><span>เปิดไพ่ <b>' + R.moves + '</b> คู่</span>' +
       '<span>สถิติดีที่สุด <b>' + fmtTime(isBest ? R.time : best) + '</b>' + (isBest ? ' (ใหม่)' : '') + '</span>';
     var vs = $('res-vs');
-    if (state.friendTime != null && state.friendSeed === state.seed) {
-      var d = R.time - state.friendTime;
-      vs.textContent = 'เพื่อนที่ท้าคุณใช้ ' + fmtTime(state.friendTime) + ' · ' + (d < 0 ? 'คุณชนะ' : d > 0 ? 'เพื่อนชนะ' : 'เสมอกัน');
-      vs.hidden = false;
-    } else vs.hidden = true;
+    vs.hidden = true;
     $('res-talk').innerHTML = END[g].map(function (l, i) {
       return '<div class="say' + (l[0] === 'rib' ? ' r' : '') + '">' + avatar(l[0]) + bubble(l[0], l[1]) + '</div>';
     }).join('');
@@ -1145,7 +1145,7 @@ function buildFlex(seed, res, url) {
       }).catch(function () { toast('ส่งการ์ดไม่สำเร็จ ลองอีกครั้ง'); });
       return;
     }
-    openSheet(msg, url, 'คัดลอกลิงก์แล้ววางส่งให้เพื่อนใน LINE ได้เลย เพื่อนจะได้ไพ่ชุดเดียวกับคุณและเห็นเวลาที่ต้องเอาชนะ');
+    openSheet(msg, url, 'คัดลอกลิงก์แล้ววางส่งให้เพื่อนใน LINE ได้เลย เพื่อนจะได้ไพ่สุ่มชุดของตัวเอง');
   }
 
   /* ---------- เริ่มต้น ---------- */
@@ -1165,10 +1165,11 @@ function buildFlex(seed, res, url) {
     document.head.appendChild(sc);
   }
   function applyChallenge(ch) {
-    state.pendingSeed = ch.seed; state.friendSeed = ch.seed; state.friendTime = ch.time;
+    if (ch.seed) state.pendingSeed = ch.seed;
+    state.friendSeed = ch.seed; state.friendTime = ch.time;
     var box = $('challenge');
-    box.innerHTML = '<strong>คุณถูกท้าให้ไขคดี #' + ch.seed.toUpperCase() + '</strong>' +
-      (ch.time != null ? '<span>เพื่อนทำได้ใน ' + fmtTime(ch.time) + ' ลองทำให้เร็วกว่านี้</span>' : '<span>เพื่อนส่งคดีนี้มาให้คุณ ไพ่วางตำแหน่งเดียวกันเป๊ะ</span>');
+    box.innerHTML = '<strong>เพื่อนชวนไขคดีจิตวิทยา' + (ch.seed ? ' #' + ch.seed.toUpperCase() : '') + '</strong>' +
+      (ch.seed ? '<span>เพื่อนส่งคดีนี้มาให้คุณ ไพ่วางตำแหน่งเดียวกันเป๊ะ</span>' : '<span>เพื่อนชวนคุณมาเล่น ไพ่สุ่มชุดของคุณเอง</span>');
     box.hidden = false;
   }
 
